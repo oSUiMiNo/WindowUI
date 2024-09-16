@@ -1,0 +1,21 @@
+{
+    "name": "WindowUI",
+    "rootNamespace": "",
+    "references": [
+        "GUID:56dd35f9b6f21364494ed8365264cbf6",
+        "GUID:3fe8d15324732ab4ba34c32c2f56b6ed",
+        "GUID:560b04d1a97f54a4e82edc0cbbb69285",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:6b49a80c39e9a9c4ea418c505e412f4d"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
