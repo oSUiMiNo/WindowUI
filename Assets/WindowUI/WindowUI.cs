@@ -7,25 +7,31 @@ using UniRx.Triggers;
 using uWindowCapture;
 using Cysharp.Threading.Tasks;
 using System;
-using Unity.VisualScripting.YamlDotNet.Core.Tokens;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(MyButton))]
 public class WindowUI : MonoBehaviour
 {
-    public MyButton button;
-    GameObject parent => transform.parent.gameObject;
-    public GameObject window;
-    public GameObject canvas;
-    public GameObject background;
-    public TMP_Dropdown dropdown;
+    [SerializeField] public GameObject altTabWindows; // インスペクターから設定
+    [HideInInspector] public MyButton button;
+    [HideInInspector] public Button windowIconButton;
+    [HideInInspector] public GameObject window;
+    [HideInInspector] public GameObject canvas;
+    [HideInInspector] public GameObject background;
+    [HideInInspector] public TMP_Dropdown dropdown;
+    [HideInInspector] public Slider soundSlider;
+    
+    public string appName;
+
     public float height = 1;
-    public float minimumWidth = 0.6f; // 最低限の幅
+    public float minimumWidth = 1f; // 最低限の幅
     public float minimizedHeight = 0.05f; // 最小化されたウィンドウのオブジェクトの高さ
     public UwcWindowTexture uwcWindowTexture;
 
     async void Start()
     {
         button = GetComponent<MyButton>();
+        windowIconButton = transform.Find("Canvas/WindowIconButton").GetComponent<Button>();
         window = transform.Find("uWCWindowObject").gameObject;
         canvas = transform.Find("Canvas").gameObject;
         background = transform.Find("Background").gameObject;
@@ -33,6 +39,9 @@ public class WindowUI : MonoBehaviour
         background.transform.localPosition = new Vector3(0, 0, 0.02f);
         dropdown = canvas.transform.Find("Dropdown").gameObject.GetComponent<TMP_Dropdown>();
         uwcWindowTexture = window.GetComponent<UwcWindowTexture>();
+        //soundSlider = canvas.transform.Find("SoundSlider").GetComponent<Slider>();
+
+        //altTabWindows = transform.Find("AltTabWIndows").gameObject;
 
         uwcWindowTexture.partialWindowTitle = "*@ML";
 
@@ -44,6 +53,11 @@ public class WindowUI : MonoBehaviour
             SetDropDownOptions();
         }
         canvas.SetActive(false);
+
+        windowIconButton.OnClickAsObservable().Subscribe(_ =>
+        {
+            altTabWindows.SetActive(true);
+        });
 
         uwcWindowTexture.On_ScaleChanged.Subscribe(async _ =>
         {
@@ -67,8 +81,8 @@ public class WindowUI : MonoBehaviour
             canvas.SetActive(false);
             Vector3 windowScale = window.transform.localScale;
             Vector2 colSize = gameObject.GetComponent<BoxCollider2D>().size;
-            //colSize.x = windowScale.x - 0.3f;
-            //colSize.y = windowScale.y - 0.3f;
+            colSize.x = windowScale.x + 0.02f;
+            colSize.y = windowScale.y + 0.02f;
             if (windowScale.x < 0.3f) colSize.x = windowScale.x;
             if (windowScale.y < 0.3f) colSize.y = windowScale.y;
             gameObject.GetComponent<BoxCollider2D>().size = colSize;
@@ -84,8 +98,15 @@ public class WindowUI : MonoBehaviour
             .ThrottleFirst(TimeSpan.FromSeconds(0.5))
             .Subscribe(async value =>
             {
+                Debug.Log("ドロップダウンバリュー変更");
                 await SetWindow(dropdown.options[value].text);
             }).AddTo(gameObject);
+
+        //UwcManager.onWindowRemoved.AddListener(async (window) =>
+        //{
+        //    Debug.Log($"ウィンドウ削除0 {window.title}");
+        //    if(this.window.GetComponent<Renderer>().material.mainTexture == null) 
+        //});
 
         //uwcWindowTexture.onWindowChanged.AddListener(async (a, b) =>
         //{
@@ -110,7 +131,7 @@ public class WindowUI : MonoBehaviour
         Debug.Log($"ウィンドウテクスチャ {uwcWindowTexture}");
         Debug.Log($"タイトル０　{uwcWindowTexture.partialWindowTitle}");
         Debug.Log($"タイトル１　{title}");
-
+        //SetSoundSlider();
 
         uwcWindowTexture.partialWindowTitle = title;
 
@@ -150,7 +171,7 @@ public class WindowUI : MonoBehaviour
         RectTransform canvasTrans = canvas.GetComponent<RectTransform>();
 
         if (windowScale.x < minimumWidth)
-            canvasTrans.SetWidth(0.6f);
+            canvasTrans.SetWidth(minimumWidth);
         else 
             canvasTrans.SetWidth(windowScale.x + 0.02f);
         if (windowScale.y < height) 
@@ -165,38 +186,45 @@ public class WindowUI : MonoBehaviour
         //if (windowScale.x < 0.3f) colSize.x = windowScale.x;
         //if (windowScale.y < 0.3f) colSize.y = windowScale.y;
         gameObject.GetComponent<BoxCollider2D>().size = colSize;
-        background.transform.localScale = new Vector3(canvasTrans.GetWidth(), canvasTrans.GetHeight(), 1);
+        background.transform.localScale = new Vector3(windowScale.x, windowScale.y, 1);
     }
 
-    //public async UniTask SetWindow(int value)
+
+    //public void SetSoundSlider()
     //{
-    //    uwcWindowTexture.partialWindowTitle = dropdown.options[value].text;
+    //    appName = CropStr_R(uwcWindowTexture.partialWindowTitle, " - ", false);
+    //    foreach (var audioVolume in altTabWindows.GetComponentsInChildren<AudioProcessVolume>())
+    //    {
+    //        Debug.Log($"ぼりゅーむつなぐ0 {audioVolume.Name}");
 
-    //    await UniTask.WaitForEndOfFrame(this);
-    //    await UniTask.WaitForSeconds(0.03f);
+    //        if (appName.Contains(audioVolume.Name, StringComparison.OrdinalIgnoreCase))
+    //        {
+    //            Debug.Log($"ぼりゅーむつなぐ1 {audioVolume.Name}");
 
-    //    int windowHeight = AltTab.windows[uwcWindowTexture.partialWindowTitle].height;
-    //    int windowWidth = AltTab.windows[uwcWindowTexture.partialWindowTitle].width;
-    //    float longerSideLength = Mathf.Max(windowHeight, windowWidth);
+    //            soundSlider.OnValueChangedAsObservable().Subscribe(volume =>
+    //            {
+    //                audioVolume.Volume.Value = volume;
+    //            });
 
-    //    uwcWindowTexture.scalePer1000Pixel = 1000 / longerSideLength;
+    //            audioVolume.Volume.Subscribe(volume =>
+    //            {
+    //                soundSlider.value = volume;
+    //            });
+    //        }
+    //    }
+    //}
 
-    //    await UniTask.WaitForEndOfFrame(this);
-    //    await UniTask.WaitForSeconds(0.03f);
-    //    Vector3 windowScale = window.transform.localScale;
 
-    //    RectTransform canvasTrans = canvas.GetComponent<RectTransform>();
-    //    canvasTrans.SetWidth(windowScale.x);
-    //    canvasTrans.SetHeight(windowScale.y);
+    //// 右側切り抜き
+    //public string CropStr_R(string str, string splitter, bool containSplitter)
+    //{
+    //    int i = str.LastIndexOf(splitter);
+    //    if (i < 0) return str;
 
-    //    if(windowScale.x < 0.6f) canvasTrans.SetWidth(0.6f);
-    //    if(windowScale.y < 0.6f) canvasTrans.SetHeight(0.6f);
+    //    int a;
+    //    if (containSplitter) a = 0;
+    //    else a = splitter.Length;
 
-    //    Vector2 colSize = gameObject.GetComponent<BoxCollider2D>().size;
-    //    //colSize.x = windowScale.x - 0.3f;
-    //    //colSize.y = windowScale.y - 0.3f;
-    //    if (windowScale.x < 0.3f) colSize.x = windowScale.x;
-    //    if (windowScale.y < 0.3f) colSize.y = windowScale.y;
-    //        gameObject.GetComponent<BoxCollider2D>().size = colSize;
+    //    return str.Substring(i + a);
     //}
 }
